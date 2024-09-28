@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import koreanize_matplotlib  # 한글 폰트 적용
 import seaborn as sns
 
 # 데이터 로드
