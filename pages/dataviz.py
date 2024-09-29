@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+import plotly.graph_objects as go
+import plotly.express as px
 
 # 데이터 로드
 file_path = 'data/gdp_data.csv'  # 업로드된 파일의 경로
@@ -14,65 +14,58 @@ gdp_data = gdp_data.drop(columns=[col for col in gdp_data.columns if 'Unnamed' i
 countries = gdp_data['Country Name'].unique()
 
 # 페이지 제목
-st.title("다중 국가 GDP 데이터 시각화")
+st.title("GDP Data Visualization with Plotly")
 
 # 국가 선택 (여러 국가 선택 가능)
-selected_countries = st.multiselect("국가를 선택하세요", countries)
+selected_countries = st.multiselect("Select countries", countries)
 
 # 연도 선택 (슬라이더)
-start_year, end_year = st.slider("연도 범위를 선택하세요", 1960, 2022, (2000, 2020))
+start_year, end_year = st.slider("Select year range", 1960, 2022, (2000, 2020))
 
-# 시각화할 연도 필터링
+# 연도 필터링
 years = [str(year) for year in range(start_year, end_year + 1)]
 
-# 시각화 (여러 국가 비교)
-st.subheader(f"선택된 국가의 GDP 시각화 ({start_year} - {end_year})")
-fig, ax = plt.subplots(figsize=(10, 6))
+# 대시보드 상단에 국가별 주요 지표 요약 (Total GDP, Average GDP, Year-over-year growth)
+st.subheader(f"Key Metrics from {start_year} to {end_year}")
 
-# 각 선택된 국가에 대해 시각화
+col1, col2 = st.columns(2)
+with col1:
+    for country in selected_countries:
+        country_data = gdp_data[gdp_data['Country Name'] == country]
+        total_gdp = country_data[years].sum(axis=1).values[0] / 1e12  # 조 단위
+        avg_gdp = country_data[years].mean(axis=1).values[0] / 1e12   # 조 단위
+        st.metric(label=f"Total GDP of {country} (Trillion US$)", value=f"{total_gdp:.2f}T", delta=f"{avg_gdp:.2f}T")
+
+with col2:
+    for country in selected_countries:
+        country_data = gdp_data[gdp_data['Country Name'] == country]
+        max_gdp = country_data[years].max(axis=1).values[0] / 1e12  # 최대값 (조 단위)
+        min_gdp = country_data[years].min(axis=1).values[0] / 1e12  # 최소값 (조 단위)
+        last_year = str(end_year - 1)
+        current_year = str(end_year)
+        if last_year in gdp_data.columns and current_year in gdp_data.columns:
+            last_year_gdp = country_data[last_year].values[0]
+            current_year_gdp = country_data[current_year].values[0]
+            growth_rate = ((current_year_gdp - last_year_gdp) / last_year_gdp) * 100 if last_year_gdp > 0 else 0
+        else:
+            growth_rate = None
+        if growth_rate is not None:
+            st.metric(label=f"Year-over-year growth of {country} (%)", value=f"{growth_rate:.2f}%", delta=f"{growth_rate:.2f}%")
+
+# 선택된 국가의 GDP 시각화 (연도별 추세)
+st.subheader(f"GDP Trend of Selected Countries ({start_year} - {end_year})")
+fig = go.Figure()
 for country in selected_countries:
     country_data = gdp_data[gdp_data['Country Name'] == country]
-    gdp_values = country_data[years].values.flatten()  # 해당 연도에 대한 GDP 값
-    ax.plot(years, gdp_values, label=country, marker='o')  # 국가별 GDP 추세 그래프
+    gdp_values = country_data[years].values.flatten() / 1e12  # 조 단위 변환
+    fig.add_trace(go.Scatter(x=years, y=gdp_values, mode='lines+markers', name=country))
+fig.update_layout(title="GDP Trend by Country (Trillion US$)", xaxis_title="Year", yaxis_title="GDP (Trillion US$)", template="plotly_white")
+st.plotly_chart(fig)
 
-# 그래프 꾸미기
-ax.set_xlabel("year")
-ax.set_ylabel("GDP (current US$)")
-ax.set_title("GDP by Country")
-plt.xticks(rotation=90)
-plt.legend(title="Country")
-plt.grid(True, linestyle='--', alpha=0.7)
-
-# 그래프 출력
-st.pyplot(fig)
-
-
-# # 특정 연도의 국가별 GDP 히스토그램
-# st.subheader("특정 연도의 국가별 GDP 히스토그램")
-
-# # 연도 선택 슬라이더
-# selected_year = st.slider("히스토그램을 위한 연도를 선택하세요", 1960, 2022, 2020)
-
-# # 선택된 연도의 GDP 데이터 필터링
-# selected_year_data = gdp_data[['Country Name', str(selected_year)]].dropna()
-
-# # 최대 최소값을 계산하여 X축 고정
-# gdp_min = gdp_data[years].min().min()  # 전체 데이터에서 최소값
-# gdp_max = gdp_data[years].max().max()  # 전체 데이터에서 최대값
-
-# # 히스토그램 시각화 (Seaborn)
-# fig, ax = plt.subplots(figsize=(10, 6))
-# sns.histplot(selected_year_data[str(selected_year)], binrange = [0, 10^13], color='skyblue', edgecolor='black', ax=ax)
-
-# # X축과 Y축의 간격 고정
-# ax.set_xlim(gdp_min, gdp_max)
-# ax.set_ylim(0, 10)  # 빈도수 축 (히스토그램 높이)
-
-# # 그래프 꾸미기
-# ax.set_title(f"{selected_year}년 국가별 GDP 분포")
-# ax.set_xlabel("GDP (current US$)")
-# ax.set_ylabel("빈도수")
-# plt.grid(True, linestyle='--', alpha=0.7)
-
-# # 히스토그램 출력
-# st.pyplot(fig)
+# 특정 연도의 국가별 GDP 히스토그램
+st.subheader("GDP Distribution by Country for a Selected Year")
+selected_year = st.slider("Select a year for the histogram", 1960, 2022, 2020)
+selected_year_data = gdp_data[['Country Name', str(selected_year)]].dropna()
+selected_year_data[str(selected_year)] = selected_year_data[str(selected_year)] / 1e12
+hist_fig = px.histogram(selected_year_data, x=str(selected_year), nbins=20, title=f"GDP Distribution in {selected_year} (Trillion US$)", labels={str(selected_year): "GDP (Trillion US$)"}, template="plotly_white")
+st.plotly_chart(hist_fig)
