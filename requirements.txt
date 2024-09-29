@@ -5,3 +5,4 @@ seaborn
 torch
 torchvision
 plotly
+st-gsheets-connection
