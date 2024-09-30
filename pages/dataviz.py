@@ -14,19 +14,19 @@ gdp_data = gdp_data.drop(columns=[col for col in gdp_data.columns if 'Unnamed' i
 countries = gdp_data['Country Name'].unique()
 
 # 페이지 제목
-st.title("GDP Data Visualization with Plotly")
+st.title("GDP 데이터 시각화")
 
 # 국가 선택 (여러 국가 선택 가능)
-selected_countries = st.multiselect("Select countries", countries)
+selected_countries = st.multiselect("국가를 선택해주세요.", countries)
 
 # 연도 선택 (슬라이더)
-start_year, end_year = st.slider("Select year range", 1960, 2022, (2000, 2020))
+start_year, end_year = st.slider("조회할 연도 범위를 지정해주세요.", 1960, 2022, (2000, 2020))
 
 # 연도 필터링
 years = [str(year) for year in range(start_year, end_year + 1)]
 
 # 대시보드 상단에 국가별 주요 지표 요약 (Total GDP, Average GDP, Year-over-year growth)
-st.subheader(f"Key Metrics from {start_year} to {end_year}")
+st.subheader(f"{start_year}~{end_year}까지 주요 지표 살펴보기")
 
 col1, col2 = st.columns(2)
 with col1:
@@ -53,7 +53,7 @@ with col2:
             st.metric(label=f"Year-over-year growth of {country} (%)", value=f"{growth_rate:.2f}%", delta=f"{growth_rate:.2f}%")
 
 # 선택된 국가의 GDP 시각화 (연도별 추세)
-st.subheader(f"GDP Trend of Selected Countries ({start_year} - {end_year})")
+st.subheader(f"위 국가들의 GDP 트렌드({start_year} - {end_year})")
 fig = go.Figure()
 for country in selected_countries:
     country_data = gdp_data[gdp_data['Country Name'] == country]
@@ -63,8 +63,8 @@ fig.update_layout(title="GDP Trend by Country (Trillion US$)", xaxis_title="Year
 st.plotly_chart(fig)
 
 # 특정 연도의 국가별 GDP 히스토그램
-st.subheader("GDP Distribution by Country for a Selected Year")
-selected_year = st.slider("Select a year for the histogram", 1960, 2022, 2020)
+st.subheader("국가별 GDP 분포")
+selected_year = st.slider("히스토그램을 그릴 연도를 선택해주세요.", 1960, 2022, 2020)
 selected_year_data = gdp_data[['Country Name', str(selected_year)]].dropna()
 selected_year_data[str(selected_year)] = selected_year_data[str(selected_year)] / 1e12
 hist_fig = px.histogram(selected_year_data, x=str(selected_year), nbins=20, title=f"GDP Distribution in {selected_year} (Trillion US$)", labels={str(selected_year): "GDP (Trillion US$)"}, template="plotly_white")

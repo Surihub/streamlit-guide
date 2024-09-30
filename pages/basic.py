@@ -1,4 +1,5 @@
 import streamlit as st
+import random
 
 # 페이지 제목
 st.title("디지털 학습지")
@@ -40,7 +41,7 @@ else:
     
     with col1:
         st.image("https://media.tenor.com/CV9KmvIEY_gAAAAM/sad-crying.gif", caption="누구일까요?")
-        answer1 = st.radio("첫 번째 캐릭터 이름을 선택하세요", ["Sadness", "Joy", "Anger"], key="answer1")
+        answer1 = st.radio("첫 번째 캐릭터 이름을 선택하세요", ["Joy", "Sadness", "Anger"], key="answer1")
         if st.button("제출 1", key="btn1"):
             if answer1.strip().lower() == "sadness":
                 st.success("정답입니다!")
@@ -49,7 +50,7 @@ else:
 
     with col2:
         st.image("https://media.tenor.com/AFbAHAuv680AAAAM/bing-bong.gif", caption="누구일까요?")
-        answer2 = st.radio("두 번째 캐릭터 이름을 선택하세요", ["Bing Bong", "Disgust", "Fear"], key="answer2")
+        answer2 = st.radio("두 번째 캐릭터 이름을 선택하세요", ["Bing Bong", "Elephant", "Fear"], key="answer2")
         if st.button("제출 2", key="btn2"):
             if answer2.strip().lower() == "bing bong":
                 st.success("정답입니다!")
@@ -69,27 +70,44 @@ else:
     st.subheader("흥미로운 콘텐츠 탭")
     tab1, tab2, tab3 = st.tabs(["수학 문제", "유튜브 강의", "데스모스 계산기"])
 
+  
     with tab1:
         st.write("아래 수학 문제를 풀어보세요.")
-        
-        # 초등학교 수준 문제들
-        problem = st.radio("수학 문제를 선택하세요", ["문제 1: 12 + 8 = ?", "문제 2: 25 ÷ 5 = ?", "문제 3: 3 × 7 = ?", "문제 4: 100 - 45 = ?"])
 
-        # 문제별 정답 설정
-        if problem == "문제 1: 12 + 8 = ?":
-            correct_answer = 20
-        elif problem == "문제 2: 25 ÷ 5 = ?":
-            correct_answer = 5
-        elif problem == "문제 3: 3 × 7 = ?":
-            correct_answer = 21
-        elif problem == "문제 4: 100 - 45 = ?":
-            correct_answer = 55
+        # 문제와 정답을 미리 설정 (LaTeX 수식 포함)
+        problems = {
+            "문제 1": r"12 + 8 = ?",
+            "문제 2": r"25 \div 5 = ?",
+            "문제 3": r"3 \times 7 = ?",
+            "문제 4": r"2x-1=3의 해는?"
+        }
+
+        # 정답 설정
+        answers = {
+            "문제 1": 20,
+            "문제 2": 5,
+            "문제 3": 21,
+            "문제 4": 2
+        }
+
+
+        # 사용자가 문제를 선택할 수 있도록 selectbox 추가
+        selected_problem_key = st.selectbox("풀고 싶은 문제를 선택하세요", list(problems.keys()))
+        
+        # 세션 상태에 선택한 문제와 정답 저장
+        if selected_problem_key != st.session_state.get('selected_problem_key'):
+            st.session_state['selected_problem_key'] = selected_problem_key
+            st.session_state['correct_answer'] = answers[selected_problem_key]
+
+        # 세션 상태에서 문제와 정답 가져오기
+        selected_problem = problems[st.session_state['selected_problem_key']]
+        correct_answer = st.session_state['correct_answer']
+
+        # 문제 출력 (LaTeX 형식으로 수식 출력)
+        st.latex(rf"{selected_problem}")  # 수식 출력
 
         # 답을 입력받기
         user_answer = st.text_input("답을 입력하세요")
-        
-        # 체크박스로 "정답을 확인하고 싶어요" 옵션 추가
-        show_answer = st.checkbox("정답을 확인하고 싶어요")
 
         # spinner와 제출 버튼 생성 및 채점
         if st.button("제출"):
@@ -99,15 +117,15 @@ else:
                         if int(user_answer) == correct_answer:
                             st.success("정답입니다!")
                             st.balloons()  # 정답을 맞추면 풍선이 나타남
+                            # 문제를 초기화하여 새로운 문제를 풀 수 있도록 함
+                            del st.session_state['selected_problem_key']
                         else:
                             st.error("틀렸습니다. 다시 시도해보세요.")
-                            if show_answer:
-                                st.info(f"정답은 {correct_answer}입니다.")
                     except ValueError:
                         st.error("숫자를 입력해주세요.")
                 else:
                     st.error("답을 입력해주세요.")
-
+    
     with tab2:
         st.write("애니메이션으로 보는 시리즈(By Alan Becker)")
         video = st.selectbox("강의 선택", ["애니메이션으로 보는 수학", "애니메이션으로 보는 물리학", "애니메이션으로 보는 기하학"])
